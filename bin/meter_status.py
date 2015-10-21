@@ -4,7 +4,7 @@
 """
 
 __author__ = "Peter Shipley"
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 
 # import RainEagle
@@ -19,28 +19,28 @@ debug = 0
 
 def create_parser():
     parser = argparse.ArgumentParser(
-		    description="print power meter status")
+                    description="print power meter status")
 
     parser.add_argument("-a", "--address", dest="addr",
-		    default=os.getenv('EAGLE_ADDR', None),
-		    help="hostname or IP device")
+                    default=os.getenv('EAGLE_ADDR', None),
+                    help="hostname or IP device")
 
     parser.add_argument("-p", "--port", dest="port", type=int,
-		    default=os.getenv('EAGLE_PORT', 5002),
-		    help="command socket port")
+                    default=os.getenv('EAGLE_PORT', 5002),
+                    help="command socket port")
 
     parser.add_argument("-d", "--debug", dest="debug",
-		    default=debug, action="count",
-		    help="print debug info")
+                    default=debug, action="count",
+                    help="print debug info")
 
     parser.add_argument("-m", "--mac", dest="mac",
-		    help="Eagle radio mac addrress")
+                    help="Eagle radio mac addrress")
 
     parser.add_argument("-t", "--timeout", dest="timeout",
-		    help="Socket timeout")
+                    help="Socket timeout")
 
     parser.add_argument("-v", '--version', action='version',
-		    version="%(prog)s {0}".format(__version__) )
+                    version="%(prog)s {0}".format(__version__) )
 
     return parser
 
@@ -90,9 +90,9 @@ def print_currentsummation(cs) :
     if 'TimeStamp' in cs :
         time_stamp = to_epoch_1970(cs['TimeStamp'])
         print "{0:s} : ".format(time.asctime(time.localtime(time_stamp)))
-    print "\tReceived  = {0:{width}.3f} Kw".format(reading_received, width=10)
-    print "\tDelivered = {0:{width}.3f} Kw".format(reading_delivered, width=10)
-    print "\t\t{0:{width}.3f} Kw".format( (reading_delivered - reading_received), width=14)
+    print "\tReceived  = {0:10.3f} Kw".format(reading_received)
+    print "\tDelivered = {0:10.3f} Kw".format(reading_delivered)
+    print "\tMeter     = {0:10.3f} Kw".format( (reading_delivered - reading_received))
 
 
 def print_instantdemand(idemand) :
