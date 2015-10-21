@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/usr/bin/python
 """
     A simple script get current meter values
 """
@@ -49,7 +49,7 @@ def main() :
 
     parser = create_parser()
     args = parser.parse_args()
-
+    print args
     eg = Eagle(**vars(args))
     # timeout=45,
 

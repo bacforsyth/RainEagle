@@ -10,12 +10,13 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-my_macid = "0xd8d5b90000001296"
+my_macid = "0xd8d5b9000000266e"
 
 
 
 # Enter your Eagle's IP below
-Eagle_IP = "10.1.1.39"
+Eagle_IP = "192.168.0.123"
+Eagle_port = 5002
 
 def print_summ(cs) :
     # global last_delivered
@@ -56,10 +57,11 @@ def print_reading(eg, rd) :
 
 ## list_devices
 
-s = socket.create_connection( (Eagle_IP, 5002), 10)
+s = socket.create_connection( (Eagle_IP, Eagle_port), 10)
 print  s
 time.sleep(1)
 
+sendstr = "<LocalCommand>\n<Name>list_devices</Name>\n</LocalCommand>\n"
 sendstr = "<LocalCommand>\n<Name>list_devices</Name>\n</LocalCommand>\n"
 
 s.sendall(sendstr)
@@ -83,7 +85,7 @@ s.close()
 
 ## get_history_data
 
-s = socket.create_connection( (Eagle_IP, 5002), 10)
+s = socket.create_connection( (Eagle_IP, Eagle_port), 10)
 print  s
 
 time.sleep(1)
@@ -117,8 +119,36 @@ for cs in etree.iter('CurrentSummation'):
      print_summ(cs)
 
 print "j =", j
+s.close()
+
+## instantaneous demand
+time.sleep(1)
+
+s = socket.create_connection( (Eagle_IP, Eagle_port), 10)
+print  s
+
+time.sleep(1)
+
+sendstr = "<LocalCommand>\n<Name>get_instantaneous_demand</Name>\n<MacId>{0}</MacId>\n</LocalCommand>\n".format(my_macid)
+
+s.sendall(sendstr)
+print
+print "sending to Eagle: \n\r"
+print sendstr
+print
+
+time.sleep(1)
+
+print "Eagle response: \n\r"
+
+while 1:
+    buf = s.recv(1000)
+    if not buf:
+        break
+    sys.stdout.write(buf)
 
 s.close()
+
 
 
 #main()
