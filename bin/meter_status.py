@@ -8,14 +8,15 @@ __version__ = "0.1.8"
 
 
 # import RainEagle
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from RainEagle import Eagle, to_epoch_1970
 import time
-import os
 import argparse
 from pprint import pprint
 
 debug = 0
-
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -28,6 +29,9 @@ def create_parser():
     parser.add_argument("-p", "--port", dest="port", type=int,
                     default=os.getenv('EAGLE_PORT', 5002),
                     help="command socket port")
+
+    parser.add_argument("--historical_data", dest="historical_data_period", choices=Eagle.historical_data_period_values(),
+                    help="Print out historical data for the given period")
 
     parser.add_argument("-d", "--debug", dest="debug",
                     default=debug, action="count",
@@ -60,6 +64,9 @@ def main() :
 
     print_currentsummation(r['CurrentSummation'])
     print
+
+    if args.historical_data_period:
+        print_historical_data(args.historical_data_period, eg.get_historical_data(period=args.historical_data_period))
 
     exit(0)
 
@@ -122,6 +129,13 @@ def print_instantdemand(idemand) :
 
     print "\tDemand    = {0:{width}.3f} Kw".format(reading, width=10)
     print "\tAmps      = {0:{width}.3f}".format( ((reading * 1000) / 240), width=10)
+
+
+def print_historical_data(period, data):
+    print "Demand data for the past %s" % period
+    for (timestamp, value) in data:
+        timestamp_string = time.asctime(time.localtime(timestamp))
+        print "%s, %f" % (timestamp_string, value)
 
 
 #

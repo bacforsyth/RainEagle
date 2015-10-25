@@ -34,7 +34,6 @@ class RainEagleResponseError(RuntimeError):
     """
     pass
 
-
 def to_epoch_2000(t) :
     """ converts time stored as
         to unix's epoch of 1970
@@ -191,6 +190,10 @@ class Eagle(object) :
                         + "updating ".format(dev_fw_ver, min_fw_ver)
                 warn( warn_message, RuntimeWarning, stacklevel=3)
 
+
+    @staticmethod
+    def historical_data_period_values():
+        return ["hour", "day", "week", "month", "year"]
 
 
 # socket commands as class functions
@@ -478,44 +481,33 @@ class Eagle(object) :
             args:
                 period          hour|day|week|month|year
 
-            On Success returns dict with the values (example):
-                'data_period'            'day'
-                'data_size'              '14'
-                'timestamp[0]'           '1394422200'
-                'timestamp[1]'           '1394425800'
-                'timestamp[2]'           '1394429400'
-                'timestamp[3]'           '1394433000'
-                'timestamp[4]'           '1394436600'
-                'timestamp[5]'           '1394440200'
-                'timestamp[6]'           '1394443800'
-                'timestamp[7]'           '1394447400'
-                'timestamp[8]'           '1394451000'
-                'timestamp[9]'           '1394454600'
-                'timestamp[10]'          '1394458200'
-                'timestamp[11]'          '1394461800'
-                'timestamp[12]'          '1394465400'
-                'timestamp[13]'          '1394469000'
-                'value[0]'               '0.429'
-                'value[1]'               '0.426'
-                'value[2]'               '0.422'
-                'value[3]'               '0.627'
-                'value[4]'               '0.735'
-                'value[5]'               '0.193'
-                'value[6]'               '0.026'
-                'value[7]'               '-0.985'
-                'value[8]'               '-1.491'
-                'value[9]'               '-2.196'
-                'value[11]'              '-1.868'
-                'value[12]'              '-1.330'
-                'value[13]'              '-0.870'
+            On Success returns an array of (timestamp, value) tupples. Timestamps are seconds since 1970-01-01T00:00:00Z
 
         """
-        if period not in ['hour', 'day', 'week', 'month', 'year'] :
+        if period not in self.historical_data_period_values():
             raise ValueError("get_historical_data : period must be one of day|week|month|year")
-        comm_responce = self._send_http_comm("get_historical_data", Period=period, Type=data_type)
+        comm_response = self._send_http_comm("get_historical_data", Period=period, Type=data_type)
+
         if self.debug :
-            print "\n\ncomm_response : ", comm_responce
-        return json.loads(comm_responce)
+            print "\n\ncomm_response : ", comm_response
+
+        # an array of (timestamp, value) tupples
+        result = []
+        comm_response = json.loads(comm_response)
+        tz_response = ""
+        if comm_response:
+            # rainforest javascript code does the get_timezone call at the same time as the get_historical_data call
+            tz_response = self.get_timezone()
+
+        if tz_response:
+            # compute offset to UTC
+            utc_offset = int(tz_response["timezone_utcTime"]) - int(tz_response["timezone_localTime"])
+            size = comm_response['data_size']
+            for i in range(0, int(size)):
+                timestamp_key = "timestamp[%d]" % i
+                value_key = "value[%d]" % i
+                result.append((int(comm_response[timestamp_key]) + utc_offset, float(comm_response[value_key])))
+        return result
 
 
     def get_setting_data(self, macid=None) :
