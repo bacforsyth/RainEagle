@@ -470,13 +470,13 @@ class Eagle(object) :
         return json.loads(comm_responce)
 
 
-    def get_historical_data(self, macid=None, period="day") :
+    def get_historical_data(self, macid=None, period="day", data_type="demand") :
         """
             get a series of summation values over an interval of time
             ( http command api )
 
             args:
-                period          day|week|month|year
+                period          hour|day|week|month|year
 
             On Success returns dict with the values (example):
                 'data_period'            'day'
@@ -510,9 +510,11 @@ class Eagle(object) :
                 'value[13]'              '-0.870'
 
         """
-        if period not in ['day', 'week', 'month', 'year'] :
+        if period not in ['hour', 'day', 'week', 'month', 'year'] :
             raise ValueError("get_historical_data : period must be one of day|week|month|year")
-        comm_responce = self._send_http_comm("get_historical_data", macid=macid, Period=period)
+        comm_responce = self._send_http_comm("get_historical_data", Period=period, Type=data_type)
+        if self.debug :
+            print "\n\ncomm_response : ", comm_responce
         return json.loads(comm_responce)
 
 
