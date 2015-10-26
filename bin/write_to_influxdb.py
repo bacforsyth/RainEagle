@@ -41,30 +41,26 @@ def create_parser():
     return parser
 
 def write_demand_values(eagle, db):
-    class DemandSeriesHelper(SeriesHelper):
-        # Meta class stores time series helper configuration.
-        class Meta:
-            client = db
-            series_name = 'demand'
-            fields = ['time', 'kW']
-            tags = []
-            bulk_size = 5
-            autocommit = True
-    print db
-    print DemandSeriesHelper
     # TODO: get latest demand value to filter our data with
     data = eagle.get_historical_data(period="hour")
+    points = []
     for (timestamp, value) in data:
         # times are expected to be in 1970 epoch nanoseconds
         if debug:
             print "%i %f" % (timestamp, value)
-        DemandSeriesHelper(time = timestamp * 1000000000, kW = value)
+        point = {"time": timestamp, "measurement": "demand", "fields": {"kW": value}}
+        points.append(point)
 
-    DemandSeriesHelper.commit()
+    write_success = db.write_points(points, time_precision="s")
+    if not write_success:
+        #TODO: should probably raise exception
+        print "failed to write data points"
 
 def main():
     parser = create_parser()
     args = parser.parse_args()
+    global debug
+    debug = args.debug
     print args
 
     db = InfluxDBClient()
