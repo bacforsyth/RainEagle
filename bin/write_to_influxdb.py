@@ -41,16 +41,26 @@ def create_parser():
     return parser
 
 def write_demand_values(eagle, db):
-    class MySeriesHelper(SeriesHelper):
+    class DemandSeriesHelper(SeriesHelper):
         # Meta class stores time series helper configuration.
         class Meta:
             client = db
             series_name = 'demand'
-            fields = ['kW']
+            fields = ['time', 'kW']
+            tags = []
             bulk_size = 5
             autocommit = True
+    print db
+    print DemandSeriesHelper
     # TODO: get latest demand value to filter our data with
-    print "hi!"
+    data = eagle.get_historical_data(period="hour")
+    for (timestamp, value) in data:
+        # times are expected to be in 1970 epoch nanoseconds
+        if debug:
+            print "%i %f" % (timestamp, value)
+        DemandSeriesHelper(time = timestamp * 1000000000, kW = value)
+
+    DemandSeriesHelper.commit()
 
 def main():
     parser = create_parser()
@@ -61,6 +71,7 @@ def main():
     databases = [x["name"] for x in db.get_list_database()]
     if "rain_eagle" in databases:
         eg = Eagle(**vars(args))
+        db.switch_database("rain_eagle")
         write_demand_values(eg, db)
     else:
         print "Did not find database with name \"rain_eagle\""
