@@ -13,9 +13,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from RainEagle import Eagle, to_epoch_1970
 
 import argparse
+import datetime
+import dateutil
 from influxdb import InfluxDBClient, SeriesHelper
 from pprint import pprint
 import time
+import pytz
 
 debug = 0
 
@@ -41,15 +44,26 @@ def create_parser():
     return parser
 
 def write_demand_values(eagle, db):
-    # TODO: get latest demand value to filter our data with
+    # get latest demand entry timestamp
+    result = db.query("SELECT * FROM demand ORDER BY time DESC LIMIT 1")
+    date = dateutil.parser.parse(list(result.get_points())[0]["time"])
+    latest_demand_timestamp = (date - datetime.datetime(1970,1,1,0,0,0,0,pytz.UTC)).total_seconds()
+    if debug:
+        print "latest demand timestamp = %d" % latest_demand_timestamp
+
     data = eagle.get_historical_data(period="hour")
     points = []
     for (timestamp, value) in data:
-        # times are expected to be in 1970 epoch nanoseconds
+        if timestamp <= latest_demand_timestamp:
+            continue
+
         if debug:
             print "%i %f" % (timestamp, value)
         point = {"time": timestamp, "measurement": "demand", "fields": {"kW": value}}
         points.append(point)
+
+    if debug:
+        print points
 
     write_success = db.write_points(points, time_precision="s")
     if not write_success:
